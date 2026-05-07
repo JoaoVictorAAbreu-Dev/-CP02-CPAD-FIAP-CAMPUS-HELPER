@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 
@@ -16,54 +16,46 @@ export function AuthProvider({ children }) {
     try {
       const savedUser = await AsyncStorage.getItem('@fiap:user_session');
       if (savedUser) setUser(JSON.parse(savedUser));
-    } catch (e) {
-      console.error('Erro ao carregar sessão', e);
+    } catch (error) {
+      console.error('Erro ao carregar sessao', error);
     } finally {
       setLoading(false);
     }
   };
 
   const register = async ({ name, rm, password }) => {
-    // NoSQL Pattern: Usamos o RM como chave única no "banco" de usuários
     const usersKey = '@fiap:users_db';
-    
-    // Salva senha de forma segura (SecureStore)
+
     await SecureStore.setItemAsync(`@fiap:pwd:${rm}`, password);
-    
+
     const newUser = { name, rm, createdAt: new Date().toISOString() };
-    
-    // Recupera o "documento" de usuários
     const existing = await AsyncStorage.getItem(usersKey);
     const users = existing ? JSON.parse(existing) : {};
-    
+
     if (users[rm]) {
-      throw new Error('Este RM já está cadastrado');
+      throw new Error('Este RM ja esta cadastrado');
     }
 
-    // Adiciona o novo "documento" ao objeto (NoSQL Style)
     users[rm] = newUser;
     await AsyncStorage.setItem(usersKey, JSON.stringify(users));
-    
-    // Login automático: salva a sessão atual
     await AsyncStorage.setItem('@fiap:user_session', JSON.stringify(newUser));
     setUser(newUser);
   };
 
   const login = async ({ rm, password }) => {
-    // Valida senha no SecureStore
     const savedPwd = await SecureStore.getItemAsync(`@fiap:pwd:${rm}`);
     if (!savedPwd || savedPwd !== password) {
       throw new Error('RM ou senha incorretos');
     }
-    
-    // Busca o usuário no "banco" NoSQL (AsyncStorage)
+
     const existing = await AsyncStorage.getItem('@fiap:users_db');
     const users = existing ? JSON.parse(existing) : {};
     const found = users[rm];
-    
-    if (!found) throw new Error('Usuário não encontrado');
-    
-    // Salva sessão
+
+    if (!found) {
+      throw new Error('Usuario nao encontrado');
+    }
+
     await AsyncStorage.setItem('@fiap:user_session', JSON.stringify(found));
     setUser(found);
   };

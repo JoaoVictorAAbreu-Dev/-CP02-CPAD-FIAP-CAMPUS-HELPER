@@ -1,0 +1,138 @@
+import React, { useState } from 'react';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { router } from 'expo-router';
+import CustomButton from '../components/CustomButton';
+import CustomInput from '../components/CustomInput';
+import Toast from '../components/Toast';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { validateName, validatePassword, validateRequired } from '../utils/validators';
+import { spacing, typography, radius } from '../constants/theme';
+
+export default function RegisterScreen() {
+  const { register } = useAuth();
+  const { colors } = useTheme();
+  const [name, setName] = useState('');
+  const [rm, setRm] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+
+  async function handleRegister() {
+    if (!validateName(name) || !validateRequired(rm) || !validatePassword(password)) {
+      setToast({
+        visible: true,
+        message: 'Informe nome, RM e senha com no minimo 6 caracteres.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await register({ name: name.trim(), rm: rm.trim(), password });
+      router.replace('/');
+    } catch (error) {
+      setToast({
+        visible: true,
+        message: error.message || 'Nao foi possivel concluir o cadastro.',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={[styles.screen, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast((current) => ({ ...current, visible: false }))}
+      />
+      <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+        <Text style={[styles.eyebrow, { color: colors.primary }]}>Cadastro</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Criar conta de acesso</Text>
+        <Text style={[styles.text, { color: colors.textSecondary }]}>
+          O cadastro fica salvo localmente para testes no Expo Go e demonstra a integracao com SecureStore.
+        </Text>
+
+        <View style={styles.form}>
+          <CustomInput
+            label="Nome"
+            value={name}
+            onChangeText={setName}
+            placeholder="Digite seu nome"
+            icon="person-outline"
+            autoCapitalize="words"
+          />
+          <CustomInput
+            label="RM"
+            value={rm}
+            onChangeText={setRm}
+            placeholder="Digite seu RM"
+            icon="id-card-outline"
+            keyboardType="number-pad"
+          />
+          <CustomInput
+            label="Senha"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Crie uma senha"
+            icon="lock-closed-outline"
+            secureTextEntry
+          />
+          <CustomButton title="Concluir cadastro" onPress={handleRegister} loading={loading} />
+        </View>
+
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={[styles.link, { color: colors.primary }]}>Voltar para o login</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  card: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 4,
+  },
+  eyebrow: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  title: {
+    ...typography.h1,
+    marginTop: spacing.sm,
+  },
+  text: {
+    ...typography.body,
+    marginTop: spacing.sm,
+    lineHeight: 22,
+  },
+  form: {
+    marginTop: spacing.xl,
+  },
+  link: {
+    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: spacing.md,
+  },
+});
