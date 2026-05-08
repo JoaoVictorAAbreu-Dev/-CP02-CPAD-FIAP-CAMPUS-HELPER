@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://github.com/user/fiap-campus-helper/blob/main/assets/fiap-logo.png?raw=true" alt="FIAP Logo" width="120"/>
+<img src="./assets/fiap-logo.png" alt="FIAP Logo" width="120"/>
 
 # Campus Helper
 
