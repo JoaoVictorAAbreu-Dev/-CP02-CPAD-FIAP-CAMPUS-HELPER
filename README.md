@@ -332,38 +332,38 @@ const KEYS = {
 
 ### Tela de Login
 
-```md
-![Login](./assets/readme/login.png)
-```
+
+![Login](./assets/login.png)
+
 
 ### Tela de Cadastro
 
-```md
-![Cadastro](./assets/readme/register.png)
-```
+
+![Cadastro](./assets/register.png)
+
 
 ### Tela Principal
 
-```md
-![Home](./assets/readme/home.png)
-```
+
+![Home](./assets/home.png)
+
 
 ### Salas
 
-```md
-![Room](.assets/reardme/room.png)
-```
+
+![Room](.assets/room.png)
+
 
 ### Achados
 
-```md
-![Found](.assets/readme/found.png)
-```
+
+![Found](.assets/found.png)
+
 ### Agendamentos
 
-```md
-![Appointments](.assets/readme/appointments.png)
-```
+
+![Appointments](.assets/appointments.png)
+
 ---
 
 ##  Demonstração em Vídeo
