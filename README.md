@@ -351,9 +351,7 @@ const KEYS = {
 
 ##  Demonstração em Vídeo
 
-```md
-[Assista à demonstração](https://youtube.com/)
-```
+![Demonstração](assets/demonstração.gif)
 
 ---
 
