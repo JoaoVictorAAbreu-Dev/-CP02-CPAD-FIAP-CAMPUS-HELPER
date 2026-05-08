@@ -331,39 +331,22 @@ const KEYS = {
 ##  Screenshots
 
 ### Tela de Login
-
-
 ![Login](./assets/login.png)
 
-
 ### Tela de Cadastro
-
-
 ![Cadastro](./assets/register.png)
 
-
 ### Tela Principal
-
-
 ![Home](./assets/home.png)
 
-
 ### Salas
-
-
-![Room](.assets/room.png)
-
+![Room](./assets/room.png)
 
 ### Achados
-
-
-![Found](.assets/found.png)
+![Found](./assets/found.png)
 
 ### Agendamentos
-
-
-![Appointments](.assets/appointments.png)
-
+![Appointments](./assets/appointments.png)
 ---
 
 ##  Demonstração em Vídeo
