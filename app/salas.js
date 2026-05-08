@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedScreen from '../components/AnimatedScreen';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, typography, radius } from '../constants/theme';
 
@@ -15,43 +16,45 @@ export default function RoomsScreen() {
   const { colors } = useTheme();
 
   return (
-    <ScrollView
-      style={[styles.screen, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={[styles.title, { color: colors.text }]}>Salas e ambientes</Text>
-      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-        Consulte espacos disponiveis e siga para o fluxo de agendamento.
-      </Text>
+    <AnimatedScreen>
+      <ScrollView
+        style={[styles.screen, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={[styles.title, { color: colors.text }]}>Salas e ambientes</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+          Consulte espacos disponiveis e siga para o fluxo de agendamento.
+        </Text>
 
-      {ROOMS.map((room) => (
-        <View key={room.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconWrap, { backgroundColor: colors.inputBg }]}>
-              <Ionicons name="business-outline" size={22} color={colors.primary} />
+        {ROOMS.map((room) => (
+          <View key={room.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.iconWrap, { backgroundColor: colors.inputBg }]}>
+                <Ionicons name="business-outline" size={22} color={colors.primary} />
+              </View>
+              <View style={styles.cardBody}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>{room.name}</Text>
+                <Text style={[styles.cardText, { color: colors.textSecondary }]}>
+                  {room.capacity} lugares - {room.resource}
+                </Text>
+              </View>
             </View>
-            <View style={styles.cardBody}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>{room.name}</Text>
-              <Text style={[styles.cardText, { color: colors.textSecondary }]}>
-                {room.capacity} lugares • {room.resource}
+
+            <View style={styles.footerRow}>
+              <Text style={[styles.badge, { backgroundColor: colors.inputBg, color: colors.text }]}>
+                {room.availability}
               </Text>
+              <TouchableOpacity
+                onPress={() => router.push({ pathname: '/agendamento', params: { sala: room.name } })}
+              >
+                <Text style={[styles.link, { color: colors.primary }]}>Agendar</Text>
+              </TouchableOpacity>
             </View>
           </View>
-
-          <View style={styles.footerRow}>
-            <Text style={[styles.badge, { backgroundColor: colors.inputBg, color: colors.text }]}>
-              {room.availability}
-            </Text>
-            <TouchableOpacity
-              onPress={() => router.push({ pathname: '/agendamento', params: { sala: room.name } })}
-            >
-              <Text style={[styles.link, { color: colors.primary }]}>Agendar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ))}
-    </ScrollView>
+        ))}
+      </ScrollView>
+    </AnimatedScreen>
   );
 }
 

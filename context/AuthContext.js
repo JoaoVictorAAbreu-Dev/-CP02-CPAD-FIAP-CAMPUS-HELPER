@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 
 const AuthContext = createContext({});
+const getPasswordKey = (rm) => `fiappwd${String(rm).trim()}`;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -26,7 +27,7 @@ export function AuthProvider({ children }) {
   const register = async ({ name, rm, password }) => {
     const usersKey = '@fiap:users_db';
 
-    await SecureStore.setItemAsync(`@fiap:pwd:${rm}`, password);
+    await SecureStore.setItemAsync(getPasswordKey(rm), password);
 
     const newUser = { name, rm, createdAt: new Date().toISOString() };
     const existing = await AsyncStorage.getItem(usersKey);
@@ -43,7 +44,7 @@ export function AuthProvider({ children }) {
   };
 
   const login = async ({ rm, password }) => {
-    const savedPwd = await SecureStore.getItemAsync(`@fiap:pwd:${rm}`);
+    const savedPwd = await SecureStore.getItemAsync(getPasswordKey(rm));
     if (!savedPwd || savedPwd !== password) {
       throw new Error('RM ou senha incorretos');
     }

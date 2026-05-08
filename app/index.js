@@ -2,10 +2,11 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Redirect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AnimatedScreen from '../components/AnimatedScreen';
 import CustomButton from '../components/CustomButton';
 import SkeletonCard from '../components/SkeletonCard';
-import { useAuth } from '../context/AuthContext';
 import { useAppData } from '../context/AppDataContext';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, typography, radius } from '../constants/theme';
 
@@ -50,64 +51,66 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView
-      style={[styles.screen, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-        <View style={styles.heroHeader}>
-          <View style={styles.heroTitleGroup}>
-            <Text style={[styles.eyebrow, { color: colors.primary }]}>FIAP Campus Helper</Text>
-            <Text style={[styles.heroTitle, { color: colors.text }]}>Ola, {user.name}</Text>
-            <Text style={[styles.heroText, { color: colors.textSecondary }]}>
-              Centralize reservas, acessos rapidos e registros de achados em um unico fluxo.
-            </Text>
+    <AnimatedScreen>
+      <ScrollView
+        style={[styles.screen, { backgroundColor: colors.background }]}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.heroCard, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+          <View style={styles.heroHeader}>
+            <View style={styles.heroTitleGroup}>
+              <Text style={[styles.eyebrow, { color: colors.primary }]}>FIAP Campus Helper</Text>
+              <Text style={[styles.heroTitle, { color: colors.text }]}>Ola, {user.name}</Text>
+              <Text style={[styles.heroText, { color: colors.textSecondary }]}>
+                Centralize reservas, acessos rapidos e registros de achados em um unico fluxo.
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.themeButton, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+              onPress={toggleTheme}
+            >
+              <Ionicons
+                name={themeMode === 'dark' ? 'sunny-outline' : 'moon-outline'}
+                size={20}
+                color={colors.text}
+              />
+            </TouchableOpacity>
           </View>
+
+          <View style={styles.metricsRow}>
+            <MetricCard label="Reservas" value={String(reservas.length)} colors={colors} />
+            <MetricCard label="Itens" value={String(itens.length)} colors={colors} />
+          </View>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Modulos</Text>
+          <Text style={[styles.sectionText, { color: colors.textSecondary }]}>
+            Escolha a operacao que voce deseja executar.
+          </Text>
+        </View>
+
+        {QUICK_ACTIONS.map((action) => (
           <TouchableOpacity
-            style={[styles.themeButton, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
-            onPress={toggleTheme}
+            key={action.route}
+            style={[styles.actionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => router.push(action.route)}
           >
-            <Ionicons
-              name={themeMode === 'dark' ? 'sunny-outline' : 'moon-outline'}
-              size={20}
-              color={colors.text}
-            />
+            <View style={[styles.actionIcon, { backgroundColor: colors.inputBg }]}>
+              <Ionicons name={action.icon} size={22} color={colors.primary} />
+            </View>
+            <View style={styles.actionBody}>
+              <Text style={[styles.actionTitle, { color: colors.text }]}>{action.title}</Text>
+              <Text style={[styles.actionText, { color: colors.textSecondary }]}>{action.description}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
-        </View>
+        ))}
 
-        <View style={styles.metricsRow}>
-          <MetricCard label="Reservas" value={String(reservas.length)} colors={colors} />
-          <MetricCard label="Itens" value={String(itens.length)} colors={colors} />
-        </View>
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Modulos</Text>
-        <Text style={[styles.sectionText, { color: colors.textSecondary }]}>
-          Escolha a operacao que voce deseja executar.
-        </Text>
-      </View>
-
-      {QUICK_ACTIONS.map((action) => (
-        <TouchableOpacity
-          key={action.route}
-          style={[styles.actionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => router.push(action.route)}
-        >
-          <View style={[styles.actionIcon, { backgroundColor: colors.inputBg }]}>
-            <Ionicons name={action.icon} size={22} color={colors.primary} />
-          </View>
-          <View style={styles.actionBody}>
-            <Text style={[styles.actionTitle, { color: colors.text }]}>{action.title}</Text>
-            <Text style={[styles.actionText, { color: colors.textSecondary }]}>{action.description}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
-      ))}
-
-      <CustomButton title="Encerrar sessao" type="outline" onPress={logout} />
-    </ScrollView>
+        <CustomButton title="Encerrar sessao" type="outline" onPress={logout} />
+      </ScrollView>
+    </AnimatedScreen>
   );
 }
 
