@@ -6,7 +6,7 @@ import CustomInput from '../components/CustomInput';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { validateName, validatePassword, validateRequired } from '../utils/validators';
+import { validateName, validatePassword, validateRM } from '../utils/validators';
 import { spacing, typography, radius } from '../constants/theme';
 
 export default function RegisterScreen() {
@@ -18,11 +18,15 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
+  function handleRmChange(value) {
+    setRm(value.replace(/\D/g, ''));
+  }
+
   async function handleRegister() {
-    if (!validateName(name) || !validateRequired(rm) || !validatePassword(password)) {
+    if (!validateName(name) || !validateRM(rm) || !validatePassword(password)) {
       setToast({
         visible: true,
-        message: 'Informe nome, RM e senha com no minimo 6 caracteres.',
+        message: 'Informe nome valido, RM somente numerico e senha com no minimo 6 caracteres.',
         type: 'warning',
       });
       return;
@@ -73,7 +77,7 @@ export default function RegisterScreen() {
           <CustomInput
             label="RM"
             value={rm}
-            onChangeText={setRm}
+            onChangeText={handleRmChange}
             placeholder="Digite seu RM"
             icon="id-card-outline"
             keyboardType="number-pad"

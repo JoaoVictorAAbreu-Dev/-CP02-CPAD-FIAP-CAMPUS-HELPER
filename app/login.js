@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import CustomButton from '../components/CustomButton';
 import CustomInput from '../components/CustomInput';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { validateRM } from '../utils/validators';
 import { spacing, typography, radius } from '../constants/theme';
 
 export default function LoginScreen() {
@@ -16,9 +17,13 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
+  function handleRmChange(value) {
+    setRm(value.replace(/\D/g, ''));
+  }
+
   async function handleLogin() {
-    if (!rm.trim() || !password.trim()) {
-      setToast({ visible: true, message: 'Preencha RM e senha.', type: 'warning' });
+    if (!validateRM(rm) || !password.trim()) {
+      setToast({ visible: true, message: 'Informe um RM numerico e a senha.', type: 'warning' });
       return;
     }
 
@@ -49,6 +54,11 @@ export default function LoginScreen() {
         onHide={() => setToast((current) => ({ ...current, visible: false }))}
       />
       <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+        <Image
+          source={require('../assets/fiap-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={[styles.eyebrow, { color: colors.primary }]}>Acesso</Text>
         <Text style={[styles.title, { color: colors.text }]}>Entrar no FIAP Campus Helper</Text>
         <Text style={[styles.text, { color: colors.textSecondary }]}>
@@ -59,7 +69,7 @@ export default function LoginScreen() {
           <CustomInput
             label="RM"
             value={rm}
-            onChangeText={setRm}
+            onChangeText={handleRmChange}
             placeholder="Digite seu RM"
             icon="id-card-outline"
             keyboardType="number-pad"
@@ -98,6 +108,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 20,
     elevation: 4,
+  },
+  logo: {
+    width: 96,
+    height: 32,
+    marginBottom: spacing.md,
   },
   eyebrow: {
     fontSize: 12,
