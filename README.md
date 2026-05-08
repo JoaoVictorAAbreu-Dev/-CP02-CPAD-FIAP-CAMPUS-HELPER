@@ -331,28 +331,28 @@ const KEYS = {
 ##  Screenshots
 
 ### Tela de Login
-<img src="./assets/login.png" width="350" alt="Login">
+<img src="./assets/login.png" width="250" alt="Login">
 
 ### Tela de Cadastro
-<img src="./assets/register.png" width="350" alt="Cadastro">
+<img src="./assets/register.png" width="250" alt="Cadastro">
 
 ### Tela Principal
-<img src="./assets/home.png" width="350" alt="Home">
+<img src="./assets/home.png" width="250" alt="Home">
 
 ### Salas
-<img src="./assets/room.png" width="350" alt="Salas">
+<img src="./assets/room.png" width="250" alt="Salas">
 
 ### Achados
-<img src="./assets/found.png" width="350" alt="Achados">
+<img src="./assets/found.png" width="250" alt="Achados">
 
 ### Agendamentos
-<img src="./assets/appointments.png" width="350" alt="Agendamentos">
+<img src="./assets/appointments.png" width="250" alt="Agendamentos">
 
 ---
 
 ##  Demonstração em Vídeo
 
-<img src="assets/demonstração.gif" width="450" alt="Demonstração">
+<img src="assets/demonstração.gif" width="250" alt="Demonstração">
 ---
 
 #  Como Executar o Projeto
