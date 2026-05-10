@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import AnimatedScreen from '../components/AnimatedScreen';
 import CustomButton from '../components/CustomButton';
 import CustomInput from '../components/CustomInput';
+import KeyboardAwareScreen from '../components/KeyboardAwareScreen';
 import Toast from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -19,6 +20,8 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const rmRef = useRef(null);
+  const passwordRef = useRef(null);
 
   function handleNameChange(value) {
     setName(value);
@@ -78,10 +81,7 @@ export default function RegisterScreen() {
 
   return (
     <AnimatedScreen>
-      <KeyboardAvoidingView
-        style={[styles.screen, { backgroundColor: colors.background }]}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardAwareScreen backgroundColor={colors.background} centered>
         <Toast
           visible={toast.visible}
           message={toast.message}
@@ -103,24 +103,40 @@ export default function RegisterScreen() {
               placeholder="Digite seu nome"
               icon="person-outline"
               autoCapitalize="words"
+              autoComplete="name"
+              textContentType="name"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => rmRef.current?.focus()}
               error={errors.name}
             />
             <CustomInput
+              ref={rmRef}
               label="RM"
               value={rm}
               onChangeText={handleRmChange}
               placeholder="Digite seu RM"
               icon="id-card-outline"
               keyboardType="number-pad"
+              autoComplete="username"
+              textContentType="username"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => passwordRef.current?.focus()}
               error={errors.rm}
             />
             <CustomInput
+              ref={passwordRef}
               label="Senha"
               value={password}
               onChangeText={handlePasswordChange}
               placeholder="Crie uma senha"
               icon="lock-closed-outline"
               secureTextEntry
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="done"
+              onSubmitEditing={handleRegister}
               error={errors.password}
             />
             {errors.register ? (
@@ -133,17 +149,12 @@ export default function RegisterScreen() {
             <Text style={[styles.link, { color: colors.primary }]}>Voltar para o login</Text>
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScreen>
     </AnimatedScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
   card: {
     borderRadius: radius.xl,
     padding: spacing.xl,

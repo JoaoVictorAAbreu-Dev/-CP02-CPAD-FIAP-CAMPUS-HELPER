@@ -353,6 +353,10 @@ const KEYS = {
 ##  Demonstração em Vídeo
 
 <img src="assets/demonstração.gif" width="250" alt="Demonstração">
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6326628 (feat - Melhore o fluxo de agendamento com suporte a teclado, validação de entrada, persistência em SQLite, experiência do usuário aprimorada e ferramentas de emulação do Android.)
 ---
 
 #  Como Executar o Projeto
@@ -461,3 +465,39 @@ O projeto consolidou conhecimentos em:
 
 ```
 ```
+
+---
+
+# Atualizacoes Recentes
+
+## Melhorias de UX nos formularios
+
+* Ajuste de comportamento do teclado no Android para evitar que os campos fiquem escondidos
+* Navegacao entre inputs com `Enter`, avancando automaticamente para o proximo campo editavel
+* Fechamento mais fluido do teclado e melhor scroll em telas com formulario
+
+## Agendamento de salas
+
+* Validacao de periodo permitida entre `8h00` e `21h00`
+* Aceita formatos como `8h00 - 10h00`
+* Ao concluir um agendamento com sucesso, o usuario retorna automaticamente para a tela inicial
+
+## Android e execucao local
+
+* Adicionado fluxo para abrir o emulador Android automaticamente antes de rodar o app
+* Novo comando disponivel:
+
+```bash
+npm run android:auto
+```
+
+## Persistencia e isolamento por usuario
+
+* Reservas agora ficam separadas por usuario com base no `RM`
+* Itens de achados e perdidos tambem ficam vinculados ao usuario logado
+* A home mostra as metricas de reservas e itens do proprio usuario autenticado
+
+## Banco local SQLite
+
+* Integracao com `expo-sqlite` adicionada ao projeto
+* Itens de achados e perdidos passaram a usar persistencia local com filtro por `usuario_rm`

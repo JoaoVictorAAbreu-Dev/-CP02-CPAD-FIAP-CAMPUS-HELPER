@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import React, { useMemo, useRef, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import AnimatedScreen from '../components/AnimatedScreen';
 import CustomButton from '../components/CustomButton';
 import CustomInput from '../components/CustomInput';
 import EmptyState from '../components/EmptyState';
+import KeyboardAwareScreen from '../components/KeyboardAwareScreen';
 import Toast from '../components/Toast';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +27,10 @@ export default function SchedulingScreen() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const dataRef = useRef(null);
+  const periodoRef = useRef(null);
+  const finalidadeRef = useRef(null);
+  const searchRef = useRef(null);
 
   const sortedReservas = useMemo(
     () => [...reservas].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)),
@@ -79,8 +84,24 @@ export default function SchedulingScreen() {
     return /^(0[1-9]|[12]\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/.test(value);
   }
 
+  function parseHourToMinutes(hour, minute) {
+    return Number(hour) * 60 + Number(minute);
+  }
+
   function isValidPeriod(value) {
-    return /^([01]\d|2[0-3])h([0-5]\d)\s?-\s?([01]\d|2[0-3])h([0-5]\d)$/.test(value.trim());
+    const match = value.trim().match(/^([89]|1\d|2[01])h([0-5]\d)\s?-\s?([89]|1\d|2[01])h([0-5]\d)$/);
+
+    if (!match) {
+      return false;
+    }
+
+    const [, startHour, startMinute, endHour, endMinute] = match;
+    const start = parseHourToMinutes(startHour, startMinute);
+    const end = parseHourToMinutes(endHour, endMinute);
+    const openingTime = parseHourToMinutes(8, 0);
+    const closingTime = parseHourToMinutes(21, 0);
+
+    return start >= openingTime && end <= closingTime && end > start;
   }
 
   function hasConflict() {
@@ -106,7 +127,7 @@ export default function SchedulingScreen() {
       nextErrors.data = 'Use o formato DD/MM/AAAA.';
     }
     if (!isValidPeriod(periodo)) {
-      nextErrors.periodo = 'Use o formato 19h00 - 21h00.';
+      nextErrors.periodo = 'Use um periodo entre 8h00 e 21h00, por exemplo 8h00 - 10h00.';
     }
     if (!validateRequired(finalidade)) {
       nextErrors.finalidade = 'Descreva a finalidade da reserva.';
@@ -138,7 +159,7 @@ export default function SchedulingScreen() {
       setPeriodo('');
       setFinalidade('');
       setErrors({});
-      setToast({ visible: true, message: 'Reserva registrada com sucesso.', type: 'success' });
+      router.replace('/');
     } catch (error) {
       setToast({ visible: true, message: 'Nao foi possivel salvar a reserva.', type: 'error' });
     } finally {
@@ -148,11 +169,7 @@ export default function SchedulingScreen() {
 
   return (
     <AnimatedScreen>
-      <ScrollView
-        style={[styles.screen, { backgroundColor: colors.background }]}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <KeyboardAwareScreen backgroundColor={colors.background} contentContainerStyle={styles.content}>
         <Toast
           visible={toast.visible}
           message={toast.message}
@@ -172,31 +189,49 @@ export default function SchedulingScreen() {
             onChangeText={handleSalaChange}
             placeholder="Ex.: Sala 305"
             icon="business-outline"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => dataRef.current?.focus()}
             error={errors.sala}
           />
           <CustomInput
+            ref={dataRef}
             label="Data"
             value={data}
             onChangeText={handleDateChange}
             placeholder="Ex.: 10/05/2026"
             icon="calendar-outline"
             keyboardType="number-pad"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => periodoRef.current?.focus()}
             error={errors.data}
           />
           <CustomInput
+            ref={periodoRef}
             label="Periodo"
             value={periodo}
             onChangeText={handlePeriodoChange}
-            placeholder="Ex.: 19h00 - 21h00"
+            placeholder="Ex.: 8h00 - 10h00"
             icon="time-outline"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => finalidadeRef.current?.focus()}
             error={errors.periodo}
           />
           <CustomInput
+            ref={finalidadeRef}
             label="Finalidade"
             value={finalidade}
             onChangeText={handleFinalidadeChange}
             placeholder="Ex.: Reuniao de projeto"
             icon="document-text-outline"
+            multiline
+            numberOfLines={3}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            submitBehavior="submit"
+            onSubmitEditing={() => searchRef.current?.focus()}
             error={errors.finalidade}
           />
           {errors.conflict ? (
@@ -208,12 +243,14 @@ export default function SchedulingScreen() {
         <View style={styles.listSection}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Reservas registradas</Text>
           <CustomInput
+            ref={searchRef}
             label="Buscar reservas"
             value={search}
             onChangeText={setSearch}
             placeholder="Buscar por sala, data, periodo ou finalidade"
             icon="search-outline"
             autoCapitalize="none"
+            returnKeyType="search"
           />
           {filteredReservas.length === 0 ? (
             <EmptyState
@@ -241,7 +278,7 @@ export default function SchedulingScreen() {
             ))
           )}
         </View>
-      </ScrollView>
+      </KeyboardAwareScreen>
     </AnimatedScreen>
   );
 }

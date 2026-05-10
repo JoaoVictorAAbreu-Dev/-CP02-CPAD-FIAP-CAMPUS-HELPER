@@ -1,15 +1,17 @@
-import React, { useMemo, useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import AnimatedScreen from '../components/AnimatedScreen';
 import CustomButton from '../components/CustomButton';
 import CustomInput from '../components/CustomInput';
 import EmptyState from '../components/EmptyState';
+import KeyboardAwareScreen from '../components/KeyboardAwareScreen';
 import Toast from '../components/Toast';
 import { useAppData } from '../context/AppDataContext';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, typography, radius } from '../constants/theme';
 import { validateRequired } from '../utils/validators';
+import { achadosService, initDatabase } from '../utils/db';
 
 const STATUS_FILTERS = [
   { label: 'Todos', value: 'todos' },
@@ -18,94 +20,49 @@ const STATUS_FILTERS = [
 ];
 
 export default function LostAndFoundScreen() {
-  const { itens, addItem, updateItemStatus, removeItem } = useAppData();
+  const { user } = useAuth();
+  const { refreshData } = useAppData();
   const { colors } = useTheme();
+  const [itens, setItens] = useState([]);
   const [nome, setNome] = useState('');
-  const [descricao, setDescricao] = useState('');
   const [local, setLocal] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
-  const [imageUri, setImageUri] = useState('');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
+  const localRef = useRef(null);
+  const searchRef = useRef(null);
 
-  const filteredItens = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+  useEffect(() => {
+    initDatabase();
+    loadItems();
+  }, [search, user?.rm]);
 
-    return itens.filter((item) => {
-      const matchesStatus = statusFilter === 'todos' || item.status === statusFilter;
-      const matchesSearch =
-        !normalizedSearch ||
-        [item.nome, item.descricao, item.local, item.status]
-          .filter(Boolean)
-          .some((value) => value.toLowerCase().includes(normalizedSearch));
-
-      return matchesStatus && matchesSearch;
-    });
-  }, [itens, search, statusFilter]);
-
-  async function handlePickImage(fromCamera = false) {
+  async function loadItems() {
     try {
-      if (fromCamera) {
-        const permission = await ImagePicker.requestCameraPermissionsAsync();
-        if (!permission.granted) {
-          setToast({ visible: true, message: 'Permita o acesso a camera para capturar a foto.', type: 'warning' });
-          return;
-        }
-
-        const result = await ImagePicker.launchCameraAsync({
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 0.7,
-        });
-
-        if (!result.canceled && result.assets?.length) {
-          setImageUri(result.assets[0].uri);
-        }
-        return;
-      }
-
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        setToast({ visible: true, message: 'Permita o acesso a galeria para selecionar uma imagem.', type: 'warning' });
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.7,
-      });
-
-      if (!result.canceled && result.assets?.length) {
-        setImageUri(result.assets[0].uri);
-      }
+      const data = achadosService.getItems(search, user?.rm);
+      setItens(data);
     } catch (error) {
-      setToast({ visible: true, message: 'Nao foi possivel acessar a imagem.', type: 'error' });
+      console.error('Erro ao carregar itens:', error);
     }
   }
 
+  const filteredItens = itens.filter((item) => statusFilter === 'todos' || item.status === statusFilter);
+
   async function handleAddItem() {
-    if (![nome, descricao, local].every(validateRequired)) {
+    if (![nome, local].every(validateRequired)) {
       setToast({ visible: true, message: 'Preencha os dados do item encontrado.', type: 'warning' });
       return;
     }
 
     try {
       setLoading(true);
-      await addItem({
-        nome: nome.trim(),
-        descricao: descricao.trim(),
-        local: local.trim(),
-        imageUri,
-        createdAt: new Date().toISOString(),
-      });
+      achadosService.addItem(nome.trim(), local.trim(), 'perdido', new Date().toISOString(), user?.rm || 'Anonimo');
       setNome('');
-      setDescricao('');
       setLocal('');
-      setImageUri('');
       setToast({ visible: true, message: 'Item cadastrado com sucesso.', type: 'success' });
+      await loadItems();
+      await refreshData();
     } catch (error) {
       setToast({ visible: true, message: 'Nao foi possivel salvar o item.', type: 'error' });
     } finally {
@@ -115,7 +72,9 @@ export default function LostAndFoundScreen() {
 
   async function handleToggleStatus(item) {
     const nextStatus = item.status === 'devolvido' ? 'perdido' : 'devolvido';
-    await updateItemStatus(item.id, nextStatus);
+    achadosService.updateStatus(item.id, nextStatus, user?.rm);
+    await loadItems();
+    await refreshData();
     setToast({
       visible: true,
       message: nextStatus === 'devolvido' ? 'Item marcado como devolvido.' : 'Item marcado como perdido.',
@@ -123,13 +82,16 @@ export default function LostAndFoundScreen() {
     });
   }
 
+  async function handleDelete(id) {
+    achadosService.deleteItem(id, user?.rm);
+    await loadItems();
+    await refreshData();
+    setToast({ visible: true, message: 'Item removido com sucesso.', type: 'success' });
+  }
+
   return (
     <AnimatedScreen>
-      <ScrollView
-        style={[styles.screen, { backgroundColor: colors.background }]}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <KeyboardAwareScreen backgroundColor={colors.background} contentContainerStyle={styles.content}>
         <Toast
           visible={toast.visible}
           message={toast.message}
@@ -139,7 +101,7 @@ export default function LostAndFoundScreen() {
 
         <Text style={[styles.title, { color: colors.text }]}>Achados e perdidos</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Registre itens localizados no campus e acompanhe a listagem salva no dispositivo.
+          Cada usuario visualiza apenas os itens que registrou na propria conta.
         </Text>
 
         <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -149,58 +111,36 @@ export default function LostAndFoundScreen() {
             onChangeText={setNome}
             placeholder="Ex.: Carteira preta"
             icon="briefcase-outline"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => localRef.current?.focus()}
           />
           <CustomInput
-            label="Descricao"
-            value={descricao}
-            onChangeText={setDescricao}
-            placeholder="Ex.: Documentos e cartoes"
-            icon="document-text-outline"
-          />
-          <CustomInput
+            ref={localRef}
             label="Local encontrado"
             value={local}
             onChangeText={setLocal}
             placeholder="Ex.: Biblioteca"
             icon="location-outline"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => searchRef.current?.focus()}
           />
-
-          <View style={styles.mediaRow}>
-            <TouchableOpacity
-              style={[styles.mediaButton, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
-              onPress={() => handlePickImage(false)}
-            >
-              <Text style={[styles.mediaButtonText, { color: colors.text }]}>Escolher da galeria</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.mediaButton, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
-              onPress={() => handlePickImage(true)}
-            >
-              <Text style={[styles.mediaButtonText, { color: colors.text }]}>Abrir camera</Text>
-            </TouchableOpacity>
-          </View>
-
-          {imageUri ? (
-            <View style={styles.previewSection}>
-              <Image source={{ uri: imageUri }} style={styles.previewImage} />
-              <TouchableOpacity onPress={() => setImageUri('')}>
-                <Text style={[styles.removeText, { color: colors.error }]}>Remover imagem</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
 
           <CustomButton title="Cadastrar item" onPress={handleAddItem} loading={loading} />
         </View>
 
         <View style={styles.listSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Itens registrados</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Meus itens registrados</Text>
           <CustomInput
+            ref={searchRef}
             label="Buscar itens"
             value={search}
             onChangeText={setSearch}
-            placeholder="Buscar por item, descricao, local ou status"
+            placeholder="Buscar por item ou local"
             icon="search-outline"
             autoCapitalize="none"
+            returnKeyType="search"
           />
 
           <View style={styles.filterRow}>
@@ -230,7 +170,7 @@ export default function LostAndFoundScreen() {
             <EmptyState
               message={
                 itens.length === 0
-                  ? 'Nenhum item cadastrado ate o momento.'
+                  ? 'Voce ainda nao registrou itens.'
                   : 'Nenhum item encontrado para os filtros informados.'
               }
               icon="search-outline"
@@ -241,10 +181,9 @@ export default function LostAndFoundScreen() {
                 key={item.id}
                 style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
               >
-                {item.imageUri ? <Image source={{ uri: item.imageUri }} style={styles.listImage} /> : null}
-                <Text style={[styles.listTitle, { color: colors.text }]}>{item.nome}</Text>
-                <Text style={[styles.listText, { color: colors.textSecondary }]}>{item.descricao}</Text>
+                <Text style={[styles.listTitle, { color: colors.text }]}>{item.item}</Text>
                 <Text style={[styles.listText, { color: colors.textSecondary }]}>Local: {item.local}</Text>
+                <Text style={[styles.listText, { color: colors.textSecondary }]}>Registrado por: {user?.name}</Text>
                 <View style={styles.cardFooter}>
                   <Text
                     style={[
@@ -263,7 +202,7 @@ export default function LostAndFoundScreen() {
                         {item.status === 'devolvido' ? 'Reabrir' : 'Devolver'}
                       </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => removeItem(item.id)}>
+                    <TouchableOpacity onPress={() => handleDelete(item.id)}>
                       <Text style={[styles.actionText, { color: colors.error }]}>Remover</Text>
                     </TouchableOpacity>
                   </View>
@@ -272,130 +211,26 @@ export default function LostAndFoundScreen() {
             ))
           )}
         </View>
-      </ScrollView>
+      </KeyboardAwareScreen>
     </AnimatedScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
-  title: {
-    ...typography.h1,
-  },
-  subtitle: {
-    ...typography.body,
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    lineHeight: 22,
-  },
-  formCard: {
-    borderWidth: 1,
-    borderRadius: radius.xl,
-    padding: spacing.lg,
-  },
-  mediaRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  mediaButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.sm,
-  },
-  mediaButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  previewSection: {
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  previewImage: {
-    width: '100%',
-    height: 180,
-    borderRadius: radius.lg,
-  },
-  listSection: {
-    marginTop: spacing.xl,
-  },
-  sectionTitle: {
-    ...typography.h2,
-    marginBottom: spacing.md,
-  },
-  filterRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  filterChip: {
-    borderWidth: 1,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  filterChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  listCard: {
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    gap: spacing.xs,
-  },
-  listImage: {
-    width: '100%',
-    height: 160,
-    borderRadius: radius.md,
-    marginBottom: spacing.sm,
-  },
-  listTitle: {
-    ...typography.h3,
-  },
-  listText: {
-    ...typography.caption,
-    lineHeight: 18,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.sm,
-    gap: spacing.md,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  badge: {
-    overflow: 'hidden',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  actionText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  removeText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
+  content: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  title: { ...typography.h1 },
+  subtitle: { ...typography.body, marginTop: spacing.sm, marginBottom: spacing.lg, lineHeight: 22 },
+  formCard: { borderWidth: 1, borderRadius: radius.xl, padding: spacing.lg },
+  listSection: { marginTop: spacing.xl },
+  sectionTitle: { ...typography.h2, marginBottom: spacing.md },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
+  filterChip: { borderWidth: 1, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  filterChipText: { fontSize: 12, fontWeight: '700' },
+  listCard: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.xs },
+  listTitle: { ...typography.h3 },
+  listText: { ...typography.caption, lineHeight: 18 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm, gap: spacing.md },
+  actionsRow: { flexDirection: 'row', gap: spacing.md },
+  badge: { overflow: 'hidden', paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.full, fontSize: 12, fontWeight: '600', textTransform: 'capitalize' },
+  actionText: { fontSize: 13, fontWeight: '700' },
 });

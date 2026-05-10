@@ -1,57 +1,119 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from './AuthContext';
+import { achadosService, initDatabase } from '../utils/db';
 
 const AppDataContext = createContext({});
+const getReservasKey = (rm) => `@fiap:reservas:${String(rm).trim()}`;
 
 export function AppDataProvider({ children }) {
+  const { user } = useAuth();
   const [reservas, setReservas] = useState([]);
   const [itens, setItens] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
+    initDatabase();
   }, []);
 
-  const persistItens = async (nextItens) => {
-    setItens(nextItens);
-    await AsyncStorage.setItem('@fiap:itens', JSON.stringify(nextItens));
-  };
+  useEffect(() => {
+    let active = true;
 
-  const loadData = async () => {
-    try {
-      const savedReservas = await AsyncStorage.getItem('@fiap:reservas');
-      const savedItens = await AsyncStorage.getItem('@fiap:itens');
+    async function loadData() {
+      setLoading(true);
 
-      if (savedReservas) setReservas(JSON.parse(savedReservas));
-      if (savedItens) setItens(JSON.parse(savedItens));
-    } catch (error) {
-      console.error('Erro ao carregar dados', error);
-    } finally {
-      setLoading(false);
+      try {
+        if (!user?.rm) {
+          if (active) {
+            setReservas([]);
+            setItens([]);
+          }
+          return;
+        }
+
+        const savedReservas = await AsyncStorage.getItem(getReservasKey(user.rm));
+        const nextReservas = savedReservas ? JSON.parse(savedReservas) : [];
+        const nextItens = achadosService.getItems('', user.rm);
+
+        if (!active) {
+          return;
+        }
+
+        setReservas(nextReservas);
+        setItens(nextItens);
+      } catch (error) {
+        console.error('Erro ao carregar dados', error);
+        if (active) {
+          setReservas([]);
+          setItens([]);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
     }
+
+    loadData();
+
+    return () => {
+      active = false;
+    };
+  }, [user?.rm]);
+
+  const refreshData = async () => {
+    if (!user?.rm) {
+      setReservas([]);
+      setItens([]);
+      return;
+    }
+
+    const savedReservas = await AsyncStorage.getItem(getReservasKey(user.rm));
+    setReservas(savedReservas ? JSON.parse(savedReservas) : []);
+    setItens(achadosService.getItems('', user.rm));
   };
 
   const addReserva = async (reserva) => {
-    const newReservas = [...reservas, { ...reserva, id: Date.now().toString() }];
+    if (!user?.rm) {
+      throw new Error('Usuario nao autenticado');
+    }
+
+    const newReservas = [...reservas, { ...reserva, id: Date.now().toString(), ownerRm: user.rm }];
     setReservas(newReservas);
-    await AsyncStorage.setItem('@fiap:reservas', JSON.stringify(newReservas));
+    await AsyncStorage.setItem(getReservasKey(user.rm), JSON.stringify(newReservas));
   };
 
   const addItem = async (item) => {
-    const newItens = [...itens, { ...item, id: Date.now().toString(), status: 'perdido' }];
-    await persistItens(newItens);
+    if (!user?.rm) {
+      throw new Error('Usuario nao autenticado');
+    }
+
+    achadosService.addItem(
+      item.nome?.trim() || item.item?.trim(),
+      item.local?.trim(),
+      item.status || 'perdido',
+      item.createdAt || new Date().toISOString(),
+      user.rm
+    );
+    await refreshData();
   };
 
   const updateItemStatus = async (id, status) => {
-    const nextItens = itens.map((item) =>
-      item.id === id ? { ...item, status, updatedAt: new Date().toISOString() } : item
-    );
-    await persistItens(nextItens);
+    if (!user?.rm) {
+      throw new Error('Usuario nao autenticado');
+    }
+
+    achadosService.updateStatus(id, status, user.rm);
+    await refreshData();
   };
 
   const removeItem = async (id) => {
-    const newItens = itens.filter((item) => item.id !== id);
-    await persistItens(newItens);
+    if (!user?.rm) {
+      throw new Error('Usuario nao autenticado');
+    }
+
+    achadosService.deleteItem(id, user.rm);
+    await refreshData();
   };
 
   return (
@@ -64,6 +126,7 @@ export function AppDataProvider({ children }) {
         addItem,
         updateItemStatus,
         removeItem,
+        refreshData,
       }}
     >
       {children}

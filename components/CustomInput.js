@@ -1,13 +1,18 @@
-import React, { useState, useRef } from 'react';
+import React, { forwardRef, useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 
-const CustomInput = ({
-  label, value, onChangeText, placeholder,
-  secureTextEntry, keyboardType, error,
-  icon, autoCapitalize = 'none',
-}) => {
+const CustomInput = forwardRef((props, ref) => {
+  const {
+    label, value, onChangeText, placeholder,
+    secureTextEntry, keyboardType, error,
+    icon, autoCapitalize = 'none',
+    returnKeyType, onSubmitEditing, blurOnSubmit,
+    autoCorrect = false, autoComplete, textContentType,
+    multiline = false, numberOfLines, inputStyle, submitBehavior,
+  } = props;
+
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -35,14 +40,20 @@ const CustomInput = ({
           {label}
         </Text>
       )}
-      <View style={[styles.inputContainer, {
+      <View style={[styles.inputContainer, multiline && styles.multilineContainer, {
         borderColor,
         backgroundColor: colors.inputBg,
         borderWidth: focused ? 2 : 1,
       }]}>
         {icon && <Ionicons name={icon} size={20} color={borderColor} style={styles.icon} />}
         <TextInput
-          style={[styles.input, { color: colors.text }]}
+          ref={ref}
+          style={[
+            styles.input,
+            multiline && styles.multilineInput,
+            { color: colors.text },
+            inputStyle,
+          ]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -50,6 +61,15 @@ const CustomInput = ({
           secureTextEntry={secureTextEntry && !showPassword}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
+          blurOnSubmit={blurOnSubmit}
+          autoCorrect={autoCorrect}
+          autoComplete={autoComplete}
+          textContentType={textContentType}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          submitBehavior={submitBehavior}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
         />
@@ -67,7 +87,9 @@ const CustomInput = ({
       )}
     </Animated.View>
   );
-};
+});
+
+CustomInput.displayName = 'CustomInput';
 
 const styles = StyleSheet.create({
   wrapper: { marginBottom: 16 },
@@ -76,8 +98,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     borderRadius: 12, paddingHorizontal: 14, height: 52,
   },
+  multilineContainer: {
+    minHeight: 96,
+    height: 'auto',
+    alignItems: 'flex-start',
+    paddingTop: 2,
+  },
   icon: { marginRight: 10 },
   input: { flex: 1, fontSize: 16 },
+  multilineInput: { minHeight: 84, textAlignVertical: 'top', paddingVertical: 14 },
   errorRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   errorText: { fontSize: 12, marginLeft: 4 },
 });
