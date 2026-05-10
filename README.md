@@ -353,10 +353,7 @@ const KEYS = {
 ##  Demonstração em Vídeo
 
 <img src="assets/demonstração.gif" width="250" alt="Demonstração">
-<<<<<<< HEAD
-=======
 
->>>>>>> 6326628 (feat - Melhore o fluxo de agendamento com suporte a teclado, validação de entrada, persistência em SQLite, experiência do usuário aprimorada e ferramentas de emulação do Android.)
 ---
 
 #  Como Executar o Projeto
