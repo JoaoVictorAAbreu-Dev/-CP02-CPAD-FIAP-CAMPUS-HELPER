@@ -498,3 +498,25 @@ npm run android:auto
 
 * Integracao com `expo-sqlite` adicionada ao projeto
 * Itens de achados e perdidos passaram a usar persistencia local com filtro por `usuario_rm`
+
+## Expansao recente do aplicativo
+
+* Dashboard inicial reformulado com visual mais executivo, metricas, avisos do campus e radar pessoal
+* Botao de logout reposicionado para o topo da home, facilitando o acesso
+* Modulo de salas evoluido com busca, filtros inteligentes e sistema de favoritos
+* Nova tela `Planner` para organizar entregas, estudos e atividades com status de conclusao
+* Nova tela `Central de Servicos` para abertura e acompanhamento de chamados internos
+* Nova tela `Perfil` para edicao de dados do aluno e configuracao de preferencias da experiencia
+
+## Novas capacidades de dados
+
+* Persistencia por usuario expandida para tarefas, chamados, favoritos e preferencias
+* Atualizacao de perfil integrada ao fluxo de autenticacao local
+* Preferencias como modo foco, janela de lembrete e bloco preferido de estudo armazenadas localmente
+
+## Evolucao da experiencia
+
+* Home conectada aos modulos principais com navegacao mais rica
+* Estados vazios redesenhados para ficarem mais claros e profissionais
+* Paleta de tema ampliada com tons especificos para informacao, alerta, sucesso e erro
+* Compatibilidade preservada para web e Android apos a expansao das funcionalidades

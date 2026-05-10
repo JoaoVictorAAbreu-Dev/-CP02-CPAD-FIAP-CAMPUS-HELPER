@@ -1,31 +1,48 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../styles/theme';
+import { useTheme } from '../context/ThemeContext';
+import { spacing, typography } from '../constants/theme';
 
-const EmptyState = ({ message, icon = 'information-circle-outline' }) => {
+export default function EmptyState({ message, icon = 'information-circle-outline', title = 'Nada por aqui ainda' }) {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={64} color={colors.gray} />
-      <Text style={styles.message}>{message}</Text>
+      <View style={[styles.iconWrap, { backgroundColor: colors.inputBg }]}>
+        <Ionicons name={icon} size={34} color={colors.primary} />
+      </View>
+      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+      <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 32,
-    marginTop: 40,
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  iconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    ...typography.h3,
+    marginTop: spacing.md,
+    textAlign: 'center',
   },
   message: {
-    fontSize: 16,
-    color: colors.gray,
+    ...typography.body,
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: spacing.sm,
+    lineHeight: 22,
+    maxWidth: 320,
   },
 });
-
-export default EmptyState;
